@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">DirectedTodo</string>
+    <string name="task_delete_text">Done</string>
+    <string name="menu_add_task_text">Add Task</string>
+</resources>
