@@ -14,17 +14,23 @@ import java.util.List;
 import java.util.Set;
 
 public class TaskListModel {
-    private TaskDbHelper mHelper;
+    private TaskDbHelper mTaskHelper;
+    private DependenciesDbHelper mDependanciesHelper;
     private List<TaskModel> tasks;
     private HashMap<String, Set<String>> dependancyMap;
     private HashMap<String, TaskModel> idMap;
 
-    public TaskDbHelper getDbHelper() {
-       return mHelper;
+    public TaskDbHelper getTasksDbHelper() {
+        return mTaskHelper;
+    }
+
+    public DependenciesDbHelper getDependanciesDbHelper() {
+        return mDependanciesHelper;
     }
 
     public TaskListModel(Context context) {
-        mHelper = new TaskDbHelper(context);
+        mTaskHelper = new TaskDbHelper(context);
+        mDependanciesHelper = new DependenciesDbHelper(context);
         tasks = new ArrayList<>();
         dependancyMap = new HashMap<>();
         idMap = new HashMap<>();
@@ -33,7 +39,7 @@ public class TaskListModel {
     }
 
     private void loadTasks() {
-        SQLiteDatabase db = mHelper.getReadableDatabase();
+        SQLiteDatabase db = mTaskHelper.getReadableDatabase();
         Cursor cursor = db.query(TaskContract.TaskEntry.TABLE,
                 new String[]{
                         TaskContract.TaskEntry._ID,
@@ -50,12 +56,12 @@ public class TaskListModel {
             String id = cursor.getString(idIndex);
 
             try {
-               Long date = Long.parseLong(dateString);
+                Long date = Long.parseLong(dateString);
                 TaskModel taskModel = new TaskModel(this, id, date, title);
                 idMap.put(id, taskModel);
                 tasks.add(taskModel);
-            } catch(NumberFormatException exception) {
-               Log.d("Model", "" + exception);
+            } catch (NumberFormatException exception) {
+                Log.d("Model", "" + exception);
             }
         }
         cursor.close();
@@ -63,22 +69,22 @@ public class TaskListModel {
     }
 
     private void loadDependancies() {
-        SQLiteDatabase db = mHelper.getReadableDatabase();
+        SQLiteDatabase db = mDependanciesHelper.getReadableDatabase();
         Cursor cursor = db.query(TaskContract.DependenciesEntry.TABLE,
-                new String[] {
-                    TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK,
-                    TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS
+                new String[]{
+                        TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK,
+                        TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS
                 },
                 null, null, null, null, null);
         int taskIndex = cursor.getColumnIndex(TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK);
         int dependantsIndex = cursor.getColumnIndex(TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS);
 
-        while(cursor.moveToNext()) {
+        while (cursor.moveToNext()) {
             String taskId = cursor.getString(taskIndex);
             String dependanciesId = cursor.getString(dependantsIndex);
 
             Set<String> result = dependancyMap.get(taskId);
-            if(result == null) {
+            if (result == null) {
                 result = new HashSet<>();
                 dependancyMap.put(taskId, result);
             }
@@ -97,8 +103,8 @@ public class TaskListModel {
         if (hasCircularDependancyBetweenTasks(other, taskModel))
             return false;
 
-        if(!dependancyMap.get(taskModelId).contains(otherId)) {
-            SQLiteDatabase db = mHelper.getWritableDatabase();
+        if (!dependancyMap.get(taskModelId).contains(otherId)) {
+            SQLiteDatabase db = mDependanciesHelper.getWritableDatabase();
             ContentValues values = new ContentValues();
             values.put(TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK, taskModelId);
             values.put(TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS, otherId);
@@ -121,18 +127,18 @@ public class TaskListModel {
         String otherId = other.getId();
 
 
-        if(dependancyMap.get(taskModelId).contains(otherId)) {
-            SQLiteDatabase db = mHelper.getWritableDatabase();
+        if (dependancyMap.get(taskModelId).contains(otherId)) {
+            SQLiteDatabase db = mDependanciesHelper.getWritableDatabase();
 
-            if(db.delete( TaskContract.DependenciesEntry.TABLE,
-             TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK + " = ? AND " + TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS + " = ?",
-                    new String[] {taskModelId, otherId }) == 1) {
+            if (db.delete(TaskContract.DependenciesEntry.TABLE,
+                    TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK + " = ? AND " + TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS + " = ?",
+                    new String[]{taskModelId, otherId}) == 1) {
                 db.close();
                 dependancyMap.get(taskModelId).remove(otherId);
-               return true;
+                return true;
             } else {
                 db.close();
-               return false;
+                return false;
             }
         } else {
             return false;
@@ -142,31 +148,34 @@ public class TaskListModel {
 
     public List<TaskModel> retrieveDependancies(TaskModel taskModel) {
         List<TaskModel> result = new ArrayList<>();
-        for(String id : dependancyMap.get(taskModel.getId())) {
-           result.add(idMap.get(id));
+        for (String id : dependancyMap.get(taskModel.getId())) {
+            result.add(idMap.get(id));
         }
         return result;
     }
 
     public boolean removeTask(TaskModel taskModel) {
-        SQLiteDatabase db = mHelper.getWritableDatabase();
+        SQLiteDatabase taskDb = mTaskHelper.getWritableDatabase();
         String taskModelId = taskModel.getId();
-        if(db.delete(TaskContract.TaskEntry.TABLE, TaskContract.TaskEntry._ID + " = ?", new String[]{taskModelId}) == 1) {
-            for(String id : dependancyMap.get(taskModelId)) {
-               db.delete(
-                       TaskContract.DependenciesEntry.TABLE,
-             TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK
-                     + " = ? AND " +
-                     TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS
-                       + " = ?", new String[] {taskModelId, id });
+        if (taskDb.delete(TaskContract.TaskEntry.TABLE, TaskContract.TaskEntry._ID + " = ?", new String[]{taskModelId}) == 1) {
+
+            SQLiteDatabase dependanciesDb = mDependanciesHelper.getWritableDatabase();
+            for (String id : dependancyMap.get(taskModelId)) {
+                dependanciesDb.delete(
+                        TaskContract.DependenciesEntry.TABLE,
+                        TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK
+                                + " = ? AND " +
+                                TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS
+                                + " = ?", new String[]{taskModelId, id});
             }
             dependancyMap.remove(taskModelId);
             tasks.remove(taskModel);
-            db.close();
+            dependanciesDb.close();
+            taskDb.close();
             return true;
         } else {
-            db.close();
-           return false;
+            taskDb.close();
+            return false;
         }
     }
 }

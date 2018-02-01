@@ -43,7 +43,7 @@ public class TaskModel {
 
    public void setTitle(String newTitle) {
        checkState();
-       SQLiteDatabase db = mListModel.getDbHelper().getWritableDatabase();
+       SQLiteDatabase db = mListModel.getTasksDbHelper().getWritableDatabase();
        ContentValues values = new ContentValues();
        values.put(TaskContract.TaskEntry.COL_TASK_TITLE, newTitle);
        int update = db.update(TaskContract.TaskEntry.TABLE,
@@ -60,7 +60,7 @@ public class TaskModel {
 
    public void setDate(Long newDate) {
        checkState();
-       SQLiteDatabase db = mListModel.getDbHelper().getWritableDatabase();
+       SQLiteDatabase db = mListModel.getTasksDbHelper().getWritableDatabase();
        ContentValues values = new ContentValues();
        values.put(TaskContract.TaskEntry.COL_TASK_DATE, newDate);
        int update = db.update(TaskContract.TaskEntry.TABLE,
