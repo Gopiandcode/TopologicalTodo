@@ -15,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,5 +111,12 @@ public class MainActivity extends AppCompatActivity {
         db.delete(TaskContract.TaskEntry.TABLE, TaskContract.TaskEntry.COL_TASK_TITLE + " = ?", new String[]{task});
         db.close();
         updateUI();
+    }
+
+    public void addDependant(View view) {
+        View parent = (View) view.getParent();
+        EditText text = (EditText) findViewById(R.id.dependant_text);
+        Log.d(TAG, "addDependant: " + text.getText());
+        Toast.makeText(this, "addDependant: " + text.getText(), Toast.LENGTH_LONG).show();
     }
 }

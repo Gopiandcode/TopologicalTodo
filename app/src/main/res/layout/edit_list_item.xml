@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#ffffff"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_alignParentStart="true"
+        android:id="@+id/edit_bar"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal">
+
+        <EditText
+            android:hint="Rename Item"
+            android:id="@+id/todo_text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="5sp"
+            android:layout_marginStart="5sp" />
+
+    </RelativeLayout>
+
+
+    <LinearLayout
+        android:layout_above="@id/todo_delete"
+        android:layout_below="@id/edit_bar"
+        android:id="@+id/dependencies_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="10sp">
+
+        <RelativeLayout
+            android:id="@+id/add_dependant"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:orientation="horizontal">
+
+            <EditText
+                android:hint="Add dependency"
+                android:id="@+id/dependant_text"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@+id/dependant_button"
+                />
+
+            <Button
+                android:id="@+id/dependant_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_marginStart="10sp"
+                android:text="Add"
+                android:onClick="addDependant"/>
+        </RelativeLayout>
+
+        <ListView
+            android:id="@+id/dependant_tasks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+        <Button
+            android:layout_alignParentBottom="true"
+            android:id="@+id/todo_delete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/item_delete_text" />
+
+
+
+</RelativeLayout>
