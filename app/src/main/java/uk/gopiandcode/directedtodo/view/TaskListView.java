@@ -89,6 +89,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
 
     private void openTaskPanel(TaskModel taskModel) {
         Log.d("model", "openTaskPanel: " + taskModel);
+
     }
 
     private class InternalOnTaskCompleteListener implements OnTaskCompleteListener {
