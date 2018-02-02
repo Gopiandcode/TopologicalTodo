@@ -1,4 +1,4 @@
-package uk.gopiandcode.directedtodo.db;
+package uk.gopiandcode.directedtodo.data;
 
 
 import android.content.ContentValues;
@@ -10,12 +10,17 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
+
+import uk.gopiandcode.directedtodo.db.TaskContract;
+import uk.gopiandcode.directedtodo.db.TaskDbHelper;
 
 public class TaskListModel {
     private TaskDbHelper mTaskHelper;
-    private DependenciesDbHelper mDependanciesHelper;
     private List<TaskModel> tasks;
     private HashMap<String, Set<String>> dependancyMap;
     private HashMap<String, TaskModel> idMap;
@@ -24,18 +29,14 @@ public class TaskListModel {
         return mTaskHelper;
     }
 
-    public DependenciesDbHelper getDependanciesDbHelper() {
-        return mDependanciesHelper;
-    }
 
     public TaskListModel(Context context) {
         mTaskHelper = new TaskDbHelper(context);
-        mDependanciesHelper = new DependenciesDbHelper(context);
         tasks = new ArrayList<>();
         dependancyMap = new HashMap<>();
         idMap = new HashMap<>();
         loadTasks();
-        loadDependancies();
+        loadDependencies();
     }
 
     private void loadTasks() {
@@ -55,21 +56,31 @@ public class TaskListModel {
             String dateString = cursor.getString(dateIndex);
             String id = cursor.getString(idIndex);
 
-            try {
-                Long date = Long.parseLong(dateString);
-                TaskModel taskModel = new TaskModel(this, id, date, title);
+            if(dateString != null) {
+                try {
+                    Long date = Long.parseLong(dateString);
+                    TaskModel taskModel = new TaskModel(this, id, date, title);
+                    idMap.put(id, taskModel);
+                    tasks.add(taskModel);
+                } catch (NumberFormatException exception) {
+                    Log.d("Model", "" + exception);
+                }
+            } else {
+                TaskModel taskModel = new TaskModel(this, id, title);
                 idMap.put(id, taskModel);
                 tasks.add(taskModel);
-            } catch (NumberFormatException exception) {
-                Log.d("Model", "" + exception);
             }
         }
         cursor.close();
         db.close();
     }
 
-    private void loadDependancies() {
-        SQLiteDatabase db = mDependanciesHelper.getReadableDatabase();
+    public List<TaskModel> getTasks() {
+       return tasks;
+    }
+
+    private void loadDependencies() {
+        SQLiteDatabase db = mTaskHelper.getReadableDatabase();
         Cursor cursor = db.query(TaskContract.DependenciesEntry.TABLE,
                 new String[]{
                         TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK,
@@ -96,15 +107,22 @@ public class TaskListModel {
         db.close();
     }
 
-    public boolean registerDependancy(TaskModel taskModel, TaskModel other) {
+    public boolean registerDependency(TaskModel taskModel, TaskModel other) {
         String taskModelId = taskModel.getId();
         String otherId = other.getId();
 
         if (hasCircularDependancyBetweenTasks(other, taskModel))
             return false;
+        Optional<Long> taskDate = taskModel.getDate();
+        Optional<Long> otherDate = taskModel.getDate();
+        if(taskDate.isPresent() && otherDate.isPresent()) {
+            if(taskDate.get() < otherDate.get())
+                return false;
+        }
 
         if (!dependancyMap.get(taskModelId).contains(otherId)) {
-            SQLiteDatabase db = mDependanciesHelper.getWritableDatabase();
+
+            SQLiteDatabase db = mTaskHelper.getWritableDatabase();
             ContentValues values = new ContentValues();
             values.put(TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK, taskModelId);
             values.put(TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS, otherId);
@@ -117,9 +135,24 @@ public class TaskListModel {
         }
     }
 
-    public boolean hasCircularDependancyBetweenTasks(TaskModel other, TaskModel taskModel) {
-        // O(nodes) dfs search to check for path
-        return false;
+    public boolean hasCircularDependancyBetweenTasks(TaskModel rootTask, TaskModel targetTask) {
+        // O(nodes) bfs search to check for path
+        Queue<String> dfsStack = new LinkedList<>();
+        boolean hasSeenTarget = false;
+
+        dfsStack.add(rootTask.getId());
+
+        while(!dfsStack.isEmpty() && !hasSeenTarget) {
+           String id = dfsStack.poll();
+            Set<String> connections = dependancyMap.get(id);
+            if(connections.contains(targetTask.getId())) {
+                hasSeenTarget = true;
+            } else {
+                dfsStack.addAll(connections);
+            }
+        }
+
+        return hasSeenTarget;
     }
 
     public boolean deregisterDependancy(TaskModel taskModel, TaskModel other) {
@@ -128,7 +161,7 @@ public class TaskListModel {
 
 
         if (dependancyMap.get(taskModelId).contains(otherId)) {
-            SQLiteDatabase db = mDependanciesHelper.getWritableDatabase();
+            SQLiteDatabase db = mTaskHelper.getWritableDatabase();
 
             if (db.delete(TaskContract.DependenciesEntry.TABLE,
                     TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK + " = ? AND " + TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS + " = ?",
@@ -159,9 +192,8 @@ public class TaskListModel {
         String taskModelId = taskModel.getId();
         if (taskDb.delete(TaskContract.TaskEntry.TABLE, TaskContract.TaskEntry._ID + " = ?", new String[]{taskModelId}) == 1) {
 
-            SQLiteDatabase dependanciesDb = mDependanciesHelper.getWritableDatabase();
             for (String id : dependancyMap.get(taskModelId)) {
-                dependanciesDb.delete(
+                taskDb.delete(
                         TaskContract.DependenciesEntry.TABLE,
                         TaskContract.DependenciesEntry.COL_DEPENDENCIES_TASK
                                 + " = ? AND " +
@@ -170,7 +202,6 @@ public class TaskListModel {
             }
             dependancyMap.remove(taskModelId);
             tasks.remove(taskModel);
-            dependanciesDb.close();
             taskDb.close();
             return true;
         } else {

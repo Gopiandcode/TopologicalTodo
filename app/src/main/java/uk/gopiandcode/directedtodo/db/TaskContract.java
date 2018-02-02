@@ -5,9 +5,9 @@ import android.provider.BaseColumns;
 
 public class TaskContract {
 
-    public static final String TASKS_DB_NAME = "ul.gopiandcode.directedtodo.db.tasks";
-    public static final String DEPENDENCIES_DB_NAME = "ul.gopiandcode.directedtodo.db.dependancies";
-    public static final int DB_VERSION = 2;
+    public static final String TASKS_DB_NAME = "ul_gopiandcode_directedtodo_db_tasks";
+    public static final String DEPENDENCIES_DB_NAME = "ul_gopiandcode_directedtodo_db_tasks";
+    public static final int DB_VERSION = 4;
 
     public class TaskEntry implements BaseColumns {
         public static final String TABLE = "tasks";

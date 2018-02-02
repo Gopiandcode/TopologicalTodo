@@ -1,24 +1,34 @@
-package uk.gopiandcode.directedtodo.db;
+package uk.gopiandcode.directedtodo.data;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.util.List;
+import java.util.Optional;
+
+import uk.gopiandcode.directedtodo.db.TaskContract;
 
 public class TaskModel {
     private boolean deleted = false;
     private TaskListModel mListModel;
     private String mId;
-    private Long mDate;
+    private Optional<Long> mDate;
     private String mTitle;
 
     public TaskModel(TaskListModel listModel, String id, Long date, String title) {
        this.mListModel = listModel;
        this.mId = id;
-       this.mDate = date;
+       this.mDate = Optional.of(date);
        this.mTitle = title;
    }
+
+    public TaskModel(TaskListModel listModel, String id, String title) {
+       this.mListModel = listModel;
+       this.mId = id;
+       this.mTitle = title;
+       this.mDate = Optional.empty();
+    }
 
     private void checkState() {
         if(deleted) {
@@ -36,7 +46,7 @@ public class TaskModel {
        return mTitle;
    }
 
-    public Long getDate() {
+    public Optional<Long> getDate() {
         checkState();
        return mDate;
    }
@@ -58,8 +68,15 @@ public class TaskModel {
            db.close();
    }
 
-   public void setDate(Long newDate) {
+   public boolean setDate(Long newDate) {
        checkState();
+
+       Optional<Long> latestDependant = getDependants().stream().map((taskModel) -> taskModel.getDate()).filter(Optional::isPresent).map(Optional::get).max(Long::compare);
+       if(latestDependant.isPresent()){
+           if(latestDependant.get() > newDate)
+               return false;
+       }
+
        SQLiteDatabase db = mListModel.getTasksDbHelper().getWritableDatabase();
        ContentValues values = new ContentValues();
        values.put(TaskContract.TaskEntry.COL_TASK_DATE, newDate);
@@ -70,14 +87,15 @@ public class TaskModel {
                        this.mId
                });
            if(update == 1) {
-                this.mDate = newDate;
+                this.mDate = Optional.of(newDate);
            }
            db.close();
+           return true;
        }
 
     public boolean addDependant(TaskModel other) {
         checkState();
-       return mListModel.registerDependancy(this, other);
+       return mListModel.registerDependency(this, other);
     }
 
     public boolean removeDependant(TaskModel other) {

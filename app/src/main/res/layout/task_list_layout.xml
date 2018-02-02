@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+     <RelativeLayout
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content">
+
+         <EditText
+             android:id="@+id/todo_text_input"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentStart="true"
+             android:layout_centerVertical="true"
+             android:layout_margin="10dp"
+             android:layout_toStartOf="@+id/todo_add_button" />
+
+         <android.support.design.widget.FloatingActionButton
+             android:id="@+id/todo_add_button"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentEnd="true"
+             android:layout_centerVertical="true"
+             android:tint="@android:color/white"
+             android:background="@drawable/toggleable_button_theme"
+             android:layout_margin="10dp"
+             app:elevation="0dp"
+             app:fabSize="mini"
+             app:srcCompat="@drawable/ic_add_black_24dp">
+
+         </android.support.design.widget.FloatingActionButton>
+
+     </RelativeLayout>
+     <ListView
+         android:id="@+id/todo_list"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layoutDirection="ltr" />
+</LinearLayout>
