@@ -2,11 +2,14 @@ package uk.gopiandcode.directedtodo.view;
 
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -30,6 +33,7 @@ interface OnTaskCompleteListener {
 }
 
 
+
 public class TaskModelListAdapter extends ArrayAdapter<TaskModel> implements ListAdapter {
     OnTaskCompleteListener listener;
 
@@ -42,28 +46,48 @@ public class TaskModelListAdapter extends ArrayAdapter<TaskModel> implements Lis
         listener = onComplete;
     }
 
+
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        View v = convertView;
+        final View v;
+        CheckBox taskCheckbox;
+        TextView taskTextview;
 
-        if (v == null) {
+        if (convertView == null) {
             LayoutInflater vi;
             vi = LayoutInflater.from(getContext());
             v = vi.inflate(R.layout.task_list_row_layout, null);
+            taskCheckbox = v.findViewById(R.id.task_complete);
+            taskTextview = v.findViewById(R.id.task_title);
+        } else {
+           v = convertView;
+            taskCheckbox = v.findViewById(R.id.task_complete);
+            taskTextview = v.findViewById(R.id.task_title);
+            taskCheckbox.setEnabled(true);
+            taskCheckbox.setChecked(false);
+            taskCheckbox.clearAnimation();
         }
 
         final TaskModel m = getItem(position);
         if (m != null) {
-            CheckBox taskCheckbox = v.findViewById(R.id.task_complete);
-            TextView taskTextview = v.findViewById(R.id.task_title);
 
             taskCheckbox.setOnCheckedChangeListener((compoundButton, b) -> {
                 if (b) {
-                    listener.onTaskComplete(m);
-                    notifyDataSetChanged();
+                    final Animation animation = AnimationUtils.loadAnimation(v.getContext(), R.anim.remove_list_item);
+                    v.startAnimation(animation);
+                    Handler handle = new Handler();
+                    taskCheckbox.setEnabled(false);
+                    handle.postDelayed(() -> {
+                        listener.onTaskComplete(m);
+                        notifyDataSetChanged();
+                        animation.cancel();
+                        taskCheckbox.setChecked(false);
+                        taskCheckbox.setEnabled(true);
+                    }, 100);
                 }
             });
+
 
 
             v.setOnClickListener(view -> {

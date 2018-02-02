@@ -39,8 +39,9 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     }
 
     private void addTask(String title) {
-
+        tasklist.addNewTask(title);
         addTaskText.getText().clear();
+        ((TaskModelListAdapter)todoList.getAdapter()).notifyDataSetChanged();
     }
 
     @Override

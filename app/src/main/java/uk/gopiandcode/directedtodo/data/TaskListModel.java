@@ -29,6 +29,19 @@ public class TaskListModel {
         return mTaskHelper;
     }
 
+    public void addNewTask(String title) {
+        SQLiteDatabase db = mTaskHelper.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(TaskContract.TaskEntry.COL_TASK_TITLE, title);
+        Long rowID = db.insert(TaskContract.TaskEntry.TABLE, null, contentValues);
+        db.close();
+
+        String id = "" + rowID;
+        TaskModel model = new TaskModel(this, id, title);
+        idMap.put(id, model);
+        tasks.add(model);
+        dependancyMap.put(id, new HashSet<>());
+    }
 
     public TaskListModel(Context context) {
         mTaskHelper = new TaskDbHelper(context);
@@ -62,6 +75,7 @@ public class TaskListModel {
                     TaskModel taskModel = new TaskModel(this, id, date, title);
                     idMap.put(id, taskModel);
                     tasks.add(taskModel);
+                    dependancyMap.put(id, new HashSet<>());
                 } catch (NumberFormatException exception) {
                     Log.d("Model", "" + exception);
                 }
@@ -69,6 +83,7 @@ public class TaskListModel {
                 TaskModel taskModel = new TaskModel(this, id, title);
                 idMap.put(id, taskModel);
                 tasks.add(taskModel);
+                dependancyMap.put(id, new HashSet<>());
             }
         }
         cursor.close();
