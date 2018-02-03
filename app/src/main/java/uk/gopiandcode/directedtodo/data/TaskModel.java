@@ -4,12 +4,16 @@ import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import uk.gopiandcode.directedtodo.db.TaskContract;
 
-public class TaskModel {
+public class TaskModel implements Serializable {
     private boolean deleted = false;
     private TaskListModel mListModel;
     private String mId;
@@ -106,6 +110,21 @@ public class TaskModel {
     public List<TaskModel> getDependants() {
         checkState();
        return mListModel.retrieveDependancies(this);
+    }
+
+    public List<TaskModel> getApplicableDependants() {
+        Set<TaskModel> dependants = new HashSet<>( this.getDependants());
+        if(this.mDate.isPresent())    {
+            return this.mListModel.getTasks().stream()
+                    .filter(taskModel -> !taskModel.mDate.isPresent() || mDate.get() > taskModel.mDate.get())
+                    .filter(taskModel -> !dependants.contains(taskModel))
+                    .filter(taskModel -> !mListModel.hasCircularDependancyBetweenTasks(taskModel, this)).collect(Collectors.toList());
+        } else {
+
+             return this.mListModel.getTasks().stream()
+                    .filter(taskModel -> !dependants.contains(taskModel))
+                    .filter(taskModel -> !mListModel.hasCircularDependancyBetweenTasks(taskModel, this)).collect(Collectors.toList());
+        }
     }
 
     public void removeTask() {

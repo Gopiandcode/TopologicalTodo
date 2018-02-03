@@ -6,6 +6,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 
@@ -89,8 +90,12 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
 
     private void openTaskPanel(TaskModel taskModel) {
         Log.d("model", "openTaskPanel: " + taskModel);
-
+        getActivity().getFragmentManager().beginTransaction().add(R.id.directed_todo_container, TaskView.newInstance(taskModel), taskModel.getTitle()).addToBackStack(null).commit();
+        getFragmentManager().addOnBackStackChangedListener(() -> {
+            ((ArrayAdapter<TaskModel>)todoList.getAdapter()).notifyDataSetChanged();
+        });
     }
+
 
     private class InternalOnTaskCompleteListener implements OnTaskCompleteListener {
         @Override
