@@ -116,8 +116,10 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
 
             if(selected == null) return;
 
+            String title = selected.getTitle();
             mApplicableDependants.remove(selected);
             mApplicableDependantsStrings.remove(selected.getTitle());
+            mApplicableDependantsStrings.removeIf(s -> s.equals(title));
             mDependants.add(selected);
             mAddDependantText.getText().clear();
             ((ArrayAdapter)mDependantTasksList.getAdapter()).notifyDataSetChanged();

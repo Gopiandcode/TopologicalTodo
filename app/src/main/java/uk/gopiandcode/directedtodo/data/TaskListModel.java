@@ -205,6 +205,10 @@ public class TaskListModel {
     public boolean removeTask(TaskModel taskModel) {
         SQLiteDatabase taskDb = mTaskHelper.getWritableDatabase();
         String taskModelId = taskModel.getId();
+
+        for (TaskModel task : tasks) {
+          task.removeDependant(taskModel);
+        }
         if (taskDb.delete(TaskContract.TaskEntry.TABLE, TaskContract.TaskEntry._ID + " = ?", new String[]{taskModelId}) == 1) {
 
             for (String id : dependancyMap.get(taskModelId)) {
@@ -215,6 +219,8 @@ public class TaskListModel {
                                 TaskContract.DependenciesEntry.COL_DEPENDENCIES_DEPENDANTS
                                 + " = ?", new String[]{taskModelId, id});
             }
+
+
             dependancyMap.remove(taskModelId);
             tasks.remove(taskModel);
             taskDb.close();

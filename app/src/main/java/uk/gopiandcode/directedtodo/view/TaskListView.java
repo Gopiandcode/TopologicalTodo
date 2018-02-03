@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.gopiandcode.directedtodo.R;
+import uk.gopiandcode.directedtodo.algorithm.TopologicalTaskComparator;
 import uk.gopiandcode.directedtodo.core.ViewFragment;
 import uk.gopiandcode.directedtodo.data.TaskListModel;
 import uk.gopiandcode.directedtodo.data.TaskModel;
@@ -43,6 +44,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
         tasklist.addNewTask(title);
         addTaskText.getText().clear();
         ((TaskModelListAdapter)todoList.getAdapter()).notifyDataSetChanged();
+        ((ArrayAdapter<TaskModel>) todoList.getAdapter()).sort(new TopologicalTaskComparator(this.tasklist));
     }
 
     @Override
@@ -93,6 +95,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
         getActivity().getFragmentManager().beginTransaction().add(R.id.directed_todo_container, TaskView.newInstance(taskModel), taskModel.getTitle()).addToBackStack(null).commit();
         getFragmentManager().addOnBackStackChangedListener(() -> {
             ((ArrayAdapter<TaskModel>)todoList.getAdapter()).notifyDataSetChanged();
+            ((ArrayAdapter<TaskModel>) todoList.getAdapter()).sort(new TopologicalTaskComparator(this.tasklist));
         });
     }
 
@@ -101,6 +104,8 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
         @Override
         public void onTaskComplete(TaskModel taskModel) {
             taskModel.removeTask();
+            ((ArrayAdapter<TaskModel>)todoList.getAdapter()).notifyDataSetChanged();
+            ((ArrayAdapter<TaskModel>) todoList.getAdapter()).sort(new TopologicalTaskComparator(tasklist));
         }
 
         @Override
