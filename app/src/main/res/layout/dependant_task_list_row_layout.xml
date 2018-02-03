@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
     android:layout_marginBottom="10dp">
 
     <TextView
@@ -12,6 +12,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
+        android:layout_marginStart="10dp"
+        android:layout_toStartOf="@id/list_dependant_task_delete"
         android:elegantTextHeight="true"
         android:ellipsize="end"
         android:maxLines="1"
@@ -19,23 +21,25 @@
         android:paddingTop="5dp"
         android:textAlignment="textStart"
         android:textColor="@android:color/black"
-        android:layout_marginStart="10dp"
         android:textSize="18sp"
         android:textStyle="normal"
-        android:layout_toStartOf="@id/list_dependant_task_delete"
         tools:text="Build an awesome todo application" />
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/list_dependant_task_delete"
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/list_dependant_task_delete"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
+        android:layout_margin="10dp"
         android:layout_marginEnd="10dp"
         android:background="@drawable/toggleable_button_theme"
+        android:scaleType="center"
+        android:scaleX="0.8"
+        android:scaleY="0.8"
         android:tint="@android:color/white"
-        app:elevation="0dp"
         app:fabSize="mini"
+        app:elevation="0dp"
         app:srcCompat="@drawable/ic_remove_black_24dp" />
 
 

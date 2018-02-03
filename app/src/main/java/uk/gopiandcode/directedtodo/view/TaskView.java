@@ -20,6 +20,8 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,7 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
     private static String TASK_MODEL = "TASK_MODEL";
     private List<TaskModel> mApplicableDependants;
     private List<TaskModel> mDependants;
+    private List<String> mApplicableDependantsStrings;
 
     public static TaskView newInstance(TaskModel model) {
         TaskView taskView = new TaskView();
@@ -61,36 +64,40 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
 
     @Override
     protected void setListeners() {
-        this.mTaskNameDependantText.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            @Override public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if(editable.length() > 0) {
+       this.mTaskNameDependantText.setOnFocusChangeListener((view, b) -> {
+            Editable editable = mTaskNameDependantText.getEditableText();
+            if(editable.length() > 0 && !mTaskModel.getTitle().equals(editable.toString())) {
                     String seq = editable.toString();
                     mTaskModel.setTitle(seq);
                     editable.clear();
                     editable.append(mTaskModel.getTitle());
-                } else {
+                } else if(editable.length() == 0){
                     editable.clear();
                     editable.append(mTaskModel.getTitle());
                 }
-            }
         });
 
         this.mAddDependantText.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            @Override public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                Log.d("Model", mApplicableDependants.toString());
-            }
+            @Override public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
             @Override
             public void afterTextChanged(Editable editable) {
+                String dependantText = editable.toString();
+                if(dependantText.contains("\n")) {
+                    dependantText.replace("\n", "");
+                    editable.clear();
+                    editable.append(dependantText);
+                }
+
                 if(editable.length() > 0) {
-                    String dependantText = editable.toString();
-                    mAddDependantButton.setEnabled(mApplicableDependants.stream().anyMatch(taskModel -> taskModel.getTitle().equals(dependantText)));
+                    boolean b = false;
+                    for (TaskModel taskModel : mApplicableDependants) {
+                        if (taskModel.getTitle().equals(dependantText)) {
+                            b = true;
+                            break;
+                        }
+                    }
+                    mAddDependantButton.setEnabled(b);
                 } else {
                    mAddDependantButton.setEnabled(false);
                 }
@@ -110,12 +117,17 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
             if(selected == null) return;
 
             mApplicableDependants.remove(selected);
+            mApplicableDependantsStrings.remove(selected.getTitle());
             mDependants.add(selected);
             mAddDependantText.getText().clear();
+            ((ArrayAdapter)mDependantTasksList.getAdapter()).notifyDataSetChanged();
+            ((ArrayAdapter)mAddDependantText.getAdapter()).notifyDataSetChanged();
+            mTaskModel.addDependant(selected);
         });
 
         this.mTaskDeleteButton.setOnClickListener(view -> {
             mTaskModel.removeTask();
+
             getFragmentManager().popBackStackImmediate();
         });
     }
@@ -125,7 +137,12 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
         this.mApplicableDependants = this.mTaskModel.getApplicableDependants();
         mDependants = this.mTaskModel.getDependants();
 
-        List<String> applicableDependantsStrings = mApplicableDependants.stream().map(TaskModel::getTitle).collect(Collectors.toList());
+        List<String> list = new ArrayList<>();
+        for (TaskModel mApplicableDependant : mApplicableDependants) {
+            String title = mApplicableDependant.getTitle();
+            list.add(title);
+        }
+        mApplicableDependantsStrings = list;
 
         mPresenter.loadTaskModels();
 
@@ -134,8 +151,8 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
 
         this.mDependantTasksList.setAdapter(new DependantTaskListAdapter(getActivity(), mDependants));
 
-        this.mAddDependantText.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.support_simple_spinner_dropdown_item, applicableDependantsStrings));
-        this.mAddDependantText.setValidator(new ApplicableDependantsValidator(applicableDependantsStrings));
+        this.mAddDependantText.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.support_simple_spinner_dropdown_item, mApplicableDependantsStrings));
+        this.mAddDependantText.setValidator(new ApplicableDependantsValidator(mApplicableDependantsStrings));
     }
 
     @Override
@@ -204,6 +221,9 @@ public class TaskView extends ViewFragment<TaskPresenter> implements TaskDisplay
                     mTaskModel.removeDependant(m);
                     mDependants.remove(m);
                     mApplicableDependants.add(m);
+                    mApplicableDependantsStrings.add(m.getTitle());
+                    ((ArrayAdapter)mDependantTasksList.getAdapter()).notifyDataSetChanged();
+                    ((ArrayAdapter)mAddDependantText.getAdapter()).notifyDataSetChanged();
                 });
 
             }

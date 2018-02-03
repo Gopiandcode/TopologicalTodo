@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +76,19 @@ public class TaskModel implements Serializable {
    public boolean setDate(Long newDate) {
        checkState();
 
-       Optional<Long> latestDependant = getDependants().stream().map((taskModel) -> taskModel.getDate()).filter(Optional::isPresent).map(Optional::get).max(Long::compare);
+       boolean seen = false;
+       Long best = null;
+       for (TaskModel taskModel : getDependants()) {
+           Optional<Long> date = taskModel.getDate();
+           if (date.isPresent()) {
+               Long aLong = date.get();
+               if (!seen || Long.compare(aLong, best) > 0) {
+                   seen = true;
+                   best = aLong;
+               }
+           }
+       }
+       Optional<Long> latestDependant = seen ? Optional.of(best) : Optional.empty();
        if(latestDependant.isPresent()){
            if(latestDependant.get() > newDate)
                return false;
@@ -115,15 +128,32 @@ public class TaskModel implements Serializable {
     public List<TaskModel> getApplicableDependants() {
         Set<TaskModel> dependants = new HashSet<>( this.getDependants());
         if(this.mDate.isPresent())    {
-            return this.mListModel.getTasks().stream()
-                    .filter(taskModel -> !taskModel.mDate.isPresent() || mDate.get() > taskModel.mDate.get())
-                    .filter(taskModel -> !dependants.contains(taskModel))
-                    .filter(taskModel -> !mListModel.hasCircularDependancyBetweenTasks(taskModel, this)).collect(Collectors.toList());
+            List<TaskModel> list = new ArrayList<>();
+            for (TaskModel taskModel : this.mListModel.getTasks()) {
+                if (!taskModel.equals(this)) {
+                    if (!taskModel.mDate.isPresent() || mDate.get() > taskModel.mDate.get()) {
+                        if (!dependants.contains(taskModel)) {
+                            if (!mListModel.hasCircularDependancyBetweenTasks(taskModel, this)) {
+                                list.add(taskModel);
+                            }
+                        }
+                    }
+                }
+            }
+            return list;
         } else {
 
-             return this.mListModel.getTasks().stream()
-                    .filter(taskModel -> !dependants.contains(taskModel))
-                    .filter(taskModel -> !mListModel.hasCircularDependancyBetweenTasks(taskModel, this)).collect(Collectors.toList());
+            List<TaskModel> list = new ArrayList<>();
+            for (TaskModel taskModel : this.mListModel.getTasks()) {
+                if (!taskModel.equals(this)) {
+                    if (!dependants.contains(taskModel)) {
+                        if (!mListModel.hasCircularDependancyBetweenTasks(taskModel, this)) {
+                            list.add(taskModel);
+                        }
+                    }
+                }
+            }
+            return list;
         }
     }
 
