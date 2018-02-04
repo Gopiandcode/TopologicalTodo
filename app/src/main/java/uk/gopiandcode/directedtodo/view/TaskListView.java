@@ -1,7 +1,10 @@
 package uk.gopiandcode.directedtodo.view;
 
 
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -9,6 +12,11 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
+
+import com.yydcdut.sdlv.Menu;
+import com.yydcdut.sdlv.MenuItem;
+import com.yydcdut.sdlv.SlideAndDragListView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +36,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     private EditText addTaskText;
     private FloatingActionButton addTaskbutton;
     private boolean isEnabled = true;
+    private TaskModelListAdapter mTaskModelListAdapter;
 
     public TaskListView() {
         taskModels = new ArrayList<>();
@@ -43,19 +52,21 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     private void addTask(String title) {
         tasklist.addNewTask(title);
         addTaskText.getText().clear();
-        ((TaskModelListAdapter)todoList.getAdapter()).notifyDataSetChanged();
-        ((ArrayAdapter<TaskModel>) todoList.getAdapter()).sort(new TopologicalTaskComparator(this.tasklist));
+       mTaskModelListAdapter.notifyDataSetChanged();
+        mTaskModelListAdapter.sort(new TopologicalTaskComparator(this.tasklist));
     }
 
     @Override
     protected void setListeners() {
-        todoList.setAdapter(new TaskModelListAdapter(getActivity(), taskModels, new InternalOnTaskCompleteListener()));
+        mTaskModelListAdapter = new TaskModelListAdapter(getActivity(), taskModels, new InternalOnTaskCompleteListener());
+        todoList.setAdapter(mTaskModelListAdapter);
         addTaskText.addTextChangedListener(new InternalTextWatcher());
         addTaskbutton.setOnClickListener(view -> {
             String string = addTaskText.getText().toString();
             addTask(string);
         });
-    }
+
+   }
 
     @Override
     protected void populate() {
@@ -66,13 +77,16 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     @Override
     protected void init() {
         setAddTaskButtonEnable(false);
-    }
+
+  }
 
     @Override
     protected void setUi(View v) {
         todoList = v.findViewById(R.id.todo_list);
         addTaskText = v.findViewById(R.id.todo_text_input);
         addTaskbutton = v.findViewById(R.id.todo_add_button);
+
+
     }
 
     @Override
@@ -94,8 +108,8 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
         Log.d("model", "openTaskPanel: " + taskModel);
         getActivity().getFragmentManager().beginTransaction().add(R.id.directed_todo_container, TaskView.newInstance(taskModel), taskModel.getTitle()).addToBackStack(null).commit();
         getFragmentManager().addOnBackStackChangedListener(() -> {
-            ((ArrayAdapter<TaskModel>)todoList.getAdapter()).notifyDataSetChanged();
-            ((ArrayAdapter<TaskModel>) todoList.getAdapter()).sort(new TopologicalTaskComparator(this.tasklist));
+            mTaskModelListAdapter.notifyDataSetChanged();
+            mTaskModelListAdapter.sort(new TopologicalTaskComparator(this.tasklist));
         });
     }
 
@@ -104,8 +118,8 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
         @Override
         public void onTaskComplete(TaskModel taskModel) {
             taskModel.removeTask();
-            ((ArrayAdapter<TaskModel>)todoList.getAdapter()).notifyDataSetChanged();
-            ((ArrayAdapter<TaskModel>) todoList.getAdapter()).sort(new TopologicalTaskComparator(tasklist));
+            mTaskModelListAdapter.notifyDataSetChanged();
+            mTaskModelListAdapter.sort(new TopologicalTaskComparator(tasklist));
         }
 
         @Override

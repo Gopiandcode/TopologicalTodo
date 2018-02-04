@@ -58,40 +58,56 @@ public class TaskListModel {
                 new String[]{
                         TaskContract.TaskEntry._ID,
                         TaskContract.TaskEntry.COL_TASK_DATE,
+                        TaskContract.TaskEntry.COL_TASK_RANKING,
                         TaskContract.TaskEntry.COL_TASK_TITLE
                 },
                 null, null, null, null, null);
-        int titleIndex = cursor.getColumnIndex(TaskContract.TaskEntry.COL_TASK_TITLE);
+          int titleIndex = cursor.getColumnIndex(TaskContract.TaskEntry.COL_TASK_TITLE);
         int dateIndex = cursor.getColumnIndex(TaskContract.TaskEntry.COL_TASK_DATE);
+        int rankingIndex = cursor.getColumnIndex(TaskContract.TaskEntry.COL_TASK_RANKING);
         int idIndex = cursor.getColumnIndex(TaskContract.TaskEntry._ID);
-        while (cursor.moveToNext()) {
+
+       while (cursor.moveToNext()) {
+
             String title = cursor.getString(titleIndex);
             String dateString = cursor.getString(dateIndex);
             String id = cursor.getString(idIndex);
+            TaskModel taskModel;
 
-            if(dateString != null) {
+            if (dateString != null) {
                 try {
                     Long date = Long.parseLong(dateString);
-                    TaskModel taskModel = new TaskModel(this, id, date, title);
+                    taskModel = new TaskModel(this, id, date, title);
                     idMap.put(id, taskModel);
                     tasks.add(taskModel);
                     dependancyMap.put(id, new HashSet<>());
                 } catch (NumberFormatException exception) {
                     Log.d("Model", "" + exception);
+                    continue;
                 }
             } else {
-                TaskModel taskModel = new TaskModel(this, id, title);
+                taskModel = new TaskModel(this, id, title);
                 idMap.put(id, taskModel);
                 tasks.add(taskModel);
                 dependancyMap.put(id, new HashSet<>());
             }
+            String ranking = cursor.getString(rankingIndex);
+            if (ranking != null) {
+                try {
+                    int anInt = Integer.parseInt(ranking);
+                    taskModel.ranking = anInt;
+                } catch (NumberFormatException e) {
+                    Log.d("Model", "" + e);
+                }
+            }
+
         }
         cursor.close();
         db.close();
     }
 
     public List<TaskModel> getTasks() {
-       return tasks;
+        return tasks;
     }
 
     private void loadDependencies() {
@@ -130,8 +146,8 @@ public class TaskListModel {
             return false;
         Optional<Long> taskDate = taskModel.getDate();
         Optional<Long> otherDate = taskModel.getDate();
-        if(taskDate.isPresent() && otherDate.isPresent()) {
-            if(taskDate.get() < otherDate.get())
+        if (taskDate.isPresent() && otherDate.isPresent()) {
+            if (taskDate.get() < otherDate.get())
                 return false;
         }
 
@@ -157,10 +173,10 @@ public class TaskListModel {
 
         dfsStack.add(rootTask.getId());
 
-        while(!dfsStack.isEmpty() && !hasSeenTarget) {
-           String id = dfsStack.poll();
+        while (!dfsStack.isEmpty() && !hasSeenTarget) {
+            String id = dfsStack.poll();
             Set<String> connections = dependancyMap.get(id);
-            if(connections.contains(targetTask.getId())) {
+            if (connections.contains(targetTask.getId())) {
                 hasSeenTarget = true;
             } else {
                 dfsStack.addAll(connections);
@@ -203,12 +219,14 @@ public class TaskListModel {
     }
 
     public boolean removeTask(TaskModel taskModel) {
+
+        for (TaskModel task : tasks) {
+            task.removeDependant(taskModel);
+        }
+
         SQLiteDatabase taskDb = mTaskHelper.getWritableDatabase();
         String taskModelId = taskModel.getId();
 
-        for (TaskModel task : tasks) {
-          task.removeDependant(taskModel);
-        }
         if (taskDb.delete(TaskContract.TaskEntry.TABLE, TaskContract.TaskEntry._ID + " = ?", new String[]{taskModelId}) == 1) {
 
             for (String id : dependancyMap.get(taskModelId)) {

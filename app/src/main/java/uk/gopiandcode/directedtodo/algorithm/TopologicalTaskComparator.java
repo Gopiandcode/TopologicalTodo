@@ -25,7 +25,7 @@ public class TopologicalTaskComparator implements Comparator<TaskModel> {
         HashSet<TaskModel> seen = new HashSet<>();
         HashMap<TaskModel, Integer> ranking = new HashMap<>();
 
-        Queue<TaskModel> toBeProcessed = new LinkedList<>();
+        Queue<TaskModel> toBeProcessed = new PriorityQueue<>();
         toBeProcessed.addAll(tasks);
 
         toBeProcessed.removeIf(taskModel -> taskModel.getDependants().size() > 0);

@@ -2,15 +2,18 @@ package uk.gopiandcode.directedtodo.view;
 
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ListAdapter;
@@ -31,6 +34,7 @@ interface OnTaskCompleteListener {
 
     void onTaskSelected(TaskModel taskModel);
 }
+
 
 
 
@@ -95,9 +99,13 @@ public class TaskModelListAdapter extends ArrayAdapter<TaskModel> implements Lis
             });
 
             if (m.getDate().isPresent()) {
-                taskTextview.setText(
-                        m.getTitle() +
-                                Instant.ofEpochMilli(m.getDate().get()).atZone(ZoneId.systemDefault()).toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    taskTextview.setText(
+                            m.getTitle() +
+                                    Instant.ofEpochMilli(m.getDate().get()).atZone(ZoneId.systemDefault()).toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+                } else {
+
+                }
             } else {
                 taskTextview.setText(m.getTitle());
             }
