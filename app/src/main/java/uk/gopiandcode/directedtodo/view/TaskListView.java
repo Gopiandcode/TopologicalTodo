@@ -1,6 +1,7 @@
 package uk.gopiandcode.directedtodo.view;
 
 
+import android.app.FragmentManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import uk.gopiandcode.directedtodo.MainActivity;
 import uk.gopiandcode.directedtodo.R;
 import uk.gopiandcode.directedtodo.algorithm.TopologicalTaskComparator;
 import uk.gopiandcode.directedtodo.core.ViewFragment;
@@ -28,6 +30,7 @@ import uk.gopiandcode.directedtodo.presenter.TaskListPresenter;
 
 public class TaskListView extends ViewFragment<TaskListPresenter> implements TaskListDisplay {
 
+    private boolean inTaskPanel = false;
     private RecyclerView todoList;
     private List<TaskModel> taskModels;
     private TaskListModel tasklist;
@@ -72,12 +75,29 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     @Override
     protected void populate() {
         mPresenter.loadTaskModels();
+        taskModels.sort(new TopologicalTaskComparator(this.tasklist));
+
         taskModels = this.tasklist.getTasks();
+         FragmentManager.OnBackStackChangedListener onBackStackChangedListener = () -> {
+             if(inTaskPanel) {
+                 taskModels.sort(new TopologicalTaskComparator(this.tasklist));
+                 mTaskModelListAdapter.notifyDataSetChanged();
+
+                 ((MainActivity) getActivity()).getSupportActionBar().setTitle("Topological Todo");
+                 inTaskPanel = false;
+             } else {
+                 inTaskPanel = true;
+             }
+        };
+        getFragmentManager().addOnBackStackChangedListener(onBackStackChangedListener);
+
+
     }
 
     @Override
     protected void init() {
         setAddTaskButtonEnable(false);
+
 
     }
 
@@ -108,11 +128,8 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     private void openTaskPanel(TaskModel taskModel) {
         Log.d("model", "openTaskPanel: " + taskModel);
         getActivity().getFragmentManager().beginTransaction().add(R.id.directed_todo_container, TaskView.newInstance(taskModel), taskModel.getTitle()).addToBackStack(null).commit();
-        getFragmentManager().addOnBackStackChangedListener(() -> {
-            taskModels.sort(new TopologicalTaskComparator(this.tasklist));
-            mTaskModelListAdapter.notifyDataSetChanged();
-        });
-    }
+        ((MainActivity)getActivity()).getSupportActionBar().setTitle(taskModel.getTitle());
+   }
 
 
     private class InternalOnTaskCompleteListener implements OnTaskCompleteListener {
@@ -258,10 +275,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
             @Override
             public void onClick(View view) {
                 int layoutPosition = getAdapterPosition();
-                Log.d("Model", "onClick: Detected click at " + layoutPosition);
                 if (mTaskModel != null && layoutPosition != RecyclerView.NO_POSITION) {
-                    Log.d("Model", "first if passed");
-                    Log.d("Model", "check " + view.getId() + " == " + mCompletedTaskCheckBox.getId());
                     if (view.getId() == mCompletedTaskCheckBox.getId()) {
                         // delete task
                         mTaskModel.removeTask();
@@ -269,10 +283,8 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
                     } else {
                         // launch new activity
                         getActivity().getFragmentManager().beginTransaction().add(R.id.directed_todo_container, TaskView.newInstance(mTaskModel), mTaskModel.getTitle()).addToBackStack(null).commit();
-                        getFragmentManager().addOnBackStackChangedListener(() -> {
-                            taskModels.sort(new TopologicalTaskComparator(tasklist));
-                            mTaskModelListAdapter.notifyDataSetChanged();
-                        });
+
+                        ((MainActivity)getActivity()).getSupportActionBar().setTitle(mTaskModel.getTitle());
 
 
                     }

@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getSupportActionBar().setTitle("Topological Todo");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.directed_todo_main_activity);
         getFragmentManager()
