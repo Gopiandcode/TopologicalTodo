@@ -1,6 +1,7 @@
 package uk.gopiandcode.directedtodo.view;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Build;
 import android.os.Handler;
@@ -27,6 +28,7 @@ import java.time.temporal.TemporalAccessor;
 import java.util.List;
 
 import uk.gopiandcode.directedtodo.R;
+import uk.gopiandcode.directedtodo.algorithm.TopologicalTaskComparator;
 import uk.gopiandcode.directedtodo.data.TaskModel;
 
 interface OnTaskCompleteListener {
@@ -34,7 +36,6 @@ interface OnTaskCompleteListener {
 
     void onTaskSelected(TaskModel taskModel);
 }
-
 
 
 
@@ -50,6 +51,10 @@ public class TaskModelListAdapter extends ArrayAdapter<TaskModel> implements Lis
         listener = onComplete;
     }
 
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
 
     @NonNull
     @Override
@@ -65,7 +70,7 @@ public class TaskModelListAdapter extends ArrayAdapter<TaskModel> implements Lis
             taskCheckbox = v.findViewById(R.id.task_complete);
             taskTextview = v.findViewById(R.id.task_title);
         } else {
-           v = convertView;
+            v = convertView;
             taskCheckbox = v.findViewById(R.id.task_complete);
             taskTextview = v.findViewById(R.id.task_title);
             taskCheckbox.setEnabled(true);
@@ -91,7 +96,6 @@ public class TaskModelListAdapter extends ArrayAdapter<TaskModel> implements Lis
                     }, 100);
                 }
             });
-
 
 
             v.setOnClickListener(view -> {
