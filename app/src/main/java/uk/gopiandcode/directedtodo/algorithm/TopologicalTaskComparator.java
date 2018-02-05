@@ -1,6 +1,8 @@
 package uk.gopiandcode.directedtodo.algorithm;
 
 
+import android.util.Log;
+
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,6 +37,7 @@ public class TopologicalTaskComparator implements Comparator<TaskModel> {
         }
 
         while(!toBeProcessed.isEmpty()) {
+            Log.d("Model", toBeProcessed.toString());
             TaskModel n = toBeProcessed.remove();
             seen.add(n);
             List<TaskModel> collect = tasks.stream()
@@ -49,7 +52,7 @@ public class TopologicalTaskComparator implements Comparator<TaskModel> {
                                     .stream()
                                     .filter(dependant ->
                                             // find dependants for the task which we have not seen
-                                            !seen.contains(dependant))
+                                            !seen.contains(dependant) && !toBeProcessed.contains(dependant))
                                     // and if there are any, then ignore it
                                     .findFirst().isPresent())
 

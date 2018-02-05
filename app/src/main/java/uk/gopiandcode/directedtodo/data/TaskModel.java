@@ -189,17 +189,18 @@ public class TaskModel implements Serializable, Comparable<TaskModel> {
 
     @Override
     public String toString() {
-        return "TaskModel{" +
-                "deleted=" + deleted +
-                ", mListModel=" + mListModel +
-                ", mId='" + mId + '\'' +
-                ", mDate=" + mDate +
-                ", mTitle='" + mTitle + '\'' +
-                '}';
+        return "Task([" + mId + "], " +
+                (mDate.isPresent() ? mDate : "") +
+                ", \'" + mTitle + '\'' +
+                " - " + ranking + ")";
     }
 
     @Override
     public int compareTo(@NonNull TaskModel taskModel) {
-        return Integer.compare(ranking, taskModel.ranking);
+        return  Integer.compare(ranking, taskModel.ranking);
+    }
+
+    public int getRanking() {
+        return ranking;
     }
 }

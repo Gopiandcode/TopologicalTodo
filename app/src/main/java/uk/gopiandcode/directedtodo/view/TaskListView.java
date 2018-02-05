@@ -75,9 +75,10 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
     @Override
     protected void populate() {
         mPresenter.loadTaskModels();
-        taskModels.sort(new TopologicalTaskComparator(this.tasklist));
 
         taskModels = this.tasklist.getTasks();
+        taskModels.sort(new TopologicalTaskComparator(this.tasklist));
+
          FragmentManager.OnBackStackChangedListener onBackStackChangedListener = () -> {
              if(inTaskPanel) {
                  taskModels.sort(new TopologicalTaskComparator(this.tasklist));
@@ -90,8 +91,6 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
              }
         };
         getFragmentManager().addOnBackStackChangedListener(onBackStackChangedListener);
-
-
     }
 
     @Override
@@ -224,7 +223,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
                     Collections.swap(mTasks, i, i+1);
                 }
 
-                 for(int i = fromPosition; i < toPosition; i++) {
+                 for(int i = 0; i < getItemCount(); i++) {
                      mTasks.get(i).setRanking(i);
                 }
 
@@ -240,7 +239,7 @@ public class TaskListView extends ViewFragment<TaskListPresenter> implements Tas
                 for(int i = fromPosition; i > toPosition; i--) {
                     Collections.swap(mTasks, i, i-1);
                 }
-                for(int i = fromPosition; i > toPosition; i--) {
+                for(int i = getItemCount() - 1; i >= 0; i--) {
                     mTasks.get(i).setRanking(i);
                 }
 
