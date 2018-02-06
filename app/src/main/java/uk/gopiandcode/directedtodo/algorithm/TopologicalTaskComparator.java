@@ -32,13 +32,14 @@ public class TopologicalTaskComparator implements Comparator<TaskModel> {
 
         toBeProcessed.removeIf(taskModel -> taskModel.getDependants().size() > 0);
         int added = 0;
-        for(TaskModel root : toBeProcessed) {
-           ranking.put(root, added++);
-        }
+//        for(TaskModel root : toBeProcessed) {
+//           ranking.put(root, added++);
+//        }
 
         while(!toBeProcessed.isEmpty()) {
             Log.d("Model", toBeProcessed.toString());
             TaskModel n = toBeProcessed.remove();
+            ranking.put(n, added++);
             seen.add(n);
             List<TaskModel> collect = tasks.stream()
 
@@ -57,10 +58,7 @@ public class TopologicalTaskComparator implements Comparator<TaskModel> {
                                     .findFirst().isPresent())
 
                     .collect(Collectors.toList());
-            for (TaskModel taskModel : collect) {
-                ranking.put(taskModel, added++);
-                toBeProcessed.add(taskModel);
-            }
+            toBeProcessed.addAll(collect);
         }
 
         this.rank = ranking;
